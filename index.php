@@ -27,8 +27,6 @@
             $txt = $_REQUEST['body'];
             $headers = "From: tech@tm30.net" . "\r\n" . "CC: tofunmi@tm30.net";
             mail('$to','$subject','$txt','$headers');
-          }else{
-            echo "mowapa";
           }
             ?>
   </body>
