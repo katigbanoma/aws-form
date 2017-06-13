@@ -4,8 +4,6 @@
   use Aws\Ses\SesClient;
   use Aws\Credentials\Credentials;
 
-  define('REGION','us-west-1');
-
   function send_email($recipients, $sender, $body, $subject) {
     $creds = new Credentials(
       'AKIAIA34FTQJLBDY62UQ',
@@ -38,7 +36,7 @@
      }
   }
 
-        //checking  required request if it's not set
+        //checking required request if it's not set
         $sender = $_REQUEST['sender'];
         if(!$sender){
           header('HTTP/ 400 Bad Request');
@@ -67,12 +65,12 @@
         http_response_code(400);
         }
 
-        $errors= array();
+        $errors = array();
         $file_name = $_FILES['recepient']['name'];
-        $file_size =$_FILES['recepient']['size'];
-        $file_tmp =$_FILES['recepient']['tmp_name'];
-        $file_type=$_FILES['recepient']['type'];
-        $file_ext=strtolower(end(explode('.',$_FILES['recepient']['name'])));
+        $file_size = $_FILES['recepient']['size'];
+        $file_tmp = $_FILES['recepient']['tmp_name'];
+        $file_type = $_FILES['recepient']['type'];
+        $file_ext = strtolower(end(explode('.',$_FILES['recepient']['name'])));
 
         $extentions = array("csv");
 
