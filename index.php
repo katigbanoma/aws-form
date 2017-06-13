@@ -1,33 +1,101 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1 maximum-scale=1, user-scalable=no">
-    <title>A-W-S</title>
-  </head>
-  <body>
-    <div style="margin:10px auto; border:1px solid #ccc; width:400px; text-align:center;">
-      <form method="post" action="index.php">
-        <p>Receipient Email:</p>
-        <p><input type="text" name="receiver" placeholder="Receiver email:"></p>
+<?php
+  require 'vendor/autoload.php';
 
-        <p>Subject:</p>
-        <p><input type="text"  name="subject"  placeholder="Subject of email:"></p>
+  use Aws\Ses\SesClient;
+  use Aws\Credentials\Credentials;
 
-        <p>Mail Body:</p>
-        <textarea  name="body" rows="6" cols="50"></textarea>
-        <p><button type="submit" name="sub" class="btn btn-default">Submit</button></p>
-      </form>
-    </div>
-            <?php
-            if($_REQUEST['receiver'] && $_REQUEST['subject'] && $_REQUEST['body'] && $_REQUEST['sub']){
-            $to = $_REQUEST['receiver'];
-            $subject = $_REQUEST['subject'];
-            $txt = $_REQUEST['body'];
-            $headers = "From: tech@tm30.net" . "\r\n" . "CC: tofunmi@tm30.net";
-            mail('$to','$subject','$txt','$headers');
+  define('REGION','us-west-1');
+
+  function send_email($recipients, $sender, $body, $subject) {
+    $creds = new Credentials(
+      'AKIAIA34FTQJLBDY62UQ',
+      'rfejiANBvwlcaUu3YsVXSITIl1qbR8dzAYBMxCDG'
+    );
+
+    $client = SesClient::factory(array(
+      'version'=> 'latest',
+      'region' => 'us-east-1',
+      'credentials' => array(
+        'key' => 'AKIAIA34FTQJLBDY62UQ',
+        'secret' => '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'
+      )
+    ));
+
+    $request = array();
+    $request['Source'] = $sender;
+    $request['Destination']['ToAddresses'] = $recipient;
+    $request['Message']['Subject']['Data'] = $subject;
+    $request['Message']['Body']['Text']['Data'] = $body;
+
+    try {
+       $result = $client->sendEmail($request);
+       $messageId = $result->get('MessageId');
+       echo("Email sent! Message ID: $messageId"."\n");
+
+     } catch (Exception $e) {
+       echo("The email was not sent. Error message: ");
+       echo($e->getMessage()."\n");
+     }
+  }
+
+        //checking  required request if it's not set
+        $sender = $_REQUEST['sender'];
+        if(!$sender){
+          header('HTTP/ 400 Bad Request');
+          echo json_encode(array('message' => 'Sender not included'));
+          http_response_code(400);
+        }
+
+        $subject = $_REQUEST['subject'];
+          if (!$subject) {
+            header('HTTP/ 400 Bad Request');
+            echo json_encode(array('message' => 'The subject of the message is not included'));
+            http_response_code(400);
           }
-            ?>
-  </body>
-</html>
+
+        $body = $_REQUEST['body'];
+          if (!$body) {
+            header('HTTP/ 400 Bad Request');
+            echo json_encode(array('message' => 'Body of message is not included'));
+            http_response_code(400);
+          }
+
+        $recepients = $_FILES['recepient'];
+        if (!$recepients) {
+        header('HTTP/ 400 Bad Request');
+        echo json_encode(array('message' => 'Recipient not included'));
+        http_response_code(400);
+        }
+
+        $errors= array();
+        $file_name = $_FILES['recepient']['name'];
+        $file_size =$_FILES['recepient']['size'];
+        $file_tmp =$_FILES['recepient']['tmp_name'];
+        $file_type=$_FILES['recepient']['type'];
+        $file_ext=strtolower(end(explode('.',$_FILES['recepient']['name'])));
+
+        $extentions = array("csv");
+
+        if(in_array($file_ext,$extentions) === false){
+           $errors[]="extension not allowed, please choose a csv file.";
+        }
+
+        if($file_size > 2097152){
+           $errors[]='File size must not be more than exactly 2 MB';
+        }
+
+        if(empty($errors)==true){
+           move_uploaded_file($file_tmp,"email_csv/".$file_name);
+           echo "Upload Successful";
+        }
+
+        # This segment reads the csv uploaded files
+        $file = fopen("email_csv/{$file_name}","r");
+        $emails = fgetcsv($file);
+
+        # Sends the emails
+        foreach ($emails as $email){
+          send_email();
+        }
+        fclose($file);
+ ?>
