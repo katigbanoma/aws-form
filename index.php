@@ -4,7 +4,7 @@
   use Aws\Ses\SesClient;
   use Aws\Credentials\Credentials;
 
-  function send_email($recipients, $sender, $body, $subject) {
+  function send_email($recipient, $sender, $body, $subject) {
     $creds = new Credentials(
       'AKIAIA34FTQJLBDY62UQ',
       'rfejiANBvwlcaUu3YsVXSITIl1qbR8dzAYBMxCDG'
@@ -36,12 +36,21 @@
      }
   }
 
+       // return 405 if request method is GET
+       if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+         header('HTTP/ 405 Method not allowed');
+         echo json_encode(array('message' => 'Method not allowed'));
+         http_response_code(405);
+         die();
+       }
+
         //checking required request if it's not set
         $sender = $_REQUEST['sender'];
         if(!$sender){
           header('HTTP/ 400 Bad Request');
           echo json_encode(array('message' => 'Sender not included'));
           http_response_code(400);
+          die();
         }
 
         $subject = $_REQUEST['subject'];
@@ -49,6 +58,7 @@
             header('HTTP/ 400 Bad Request');
             echo json_encode(array('message' => 'The subject of the message is not included'));
             http_response_code(400);
+            die();
           }
 
         $body = $_REQUEST['body'];
@@ -56,13 +66,15 @@
             header('HTTP/ 400 Bad Request');
             echo json_encode(array('message' => 'Body of message is not included'));
             http_response_code(400);
+            die();
           }
 
         $recepients = $_FILES['recepient'];
         if (!$recepients) {
-        header('HTTP/ 400 Bad Request');
-        echo json_encode(array('message' => 'Recipient not included'));
-        http_response_code(400);
+          header('HTTP/ 400 Bad Request');
+          echo json_encode(array('message' => 'Recipient not included'));
+          http_response_code(400);
+          die();
         }
 
         $errors = array();
@@ -84,16 +96,18 @@
 
         if(empty($errors)==true){
            move_uploaded_file($file_tmp,"email_csv/".$file_name);
-           echo "Upload Successful";
         }
 
         # This segment reads the csv uploaded files
         $file = fopen("email_csv/{$file_name}","r");
         $emails = fgetcsv($file);
 
-        # Sends the emails
-        foreach ($emails as $email){
-          send_email();
+        try {
+          send_email($emails, $sender, $subject, $body);
+        } catch(Exception $e) {
+          var_dump($e);
+          die();
         }
+
         fclose($file);
  ?>
