@@ -4,19 +4,30 @@
   use Aws\Ses\SesClient;
   use Aws\Credentials\Credentials;
 
-  function send_email($recipient, $sender, $body, $subject) {
+  function getConfigs($filename){
+    $str = file_get_contents($filename);
+    $nu = json_decode($str);
+
+    return $nu;
+  }
+
+  function createCredentials($nu){
     $creds = new Credentials(
-      'AKIAIA34FTQJLBDY62UQ',
-      'rfejiANBvwlcaUu3YsVXSITIl1qbR8dzAYBMxCDG'
+      $nu->key,
+      $nu->secret
     );
+
+    return $creds;
+  }
+
+  function send_email($recipient, $sender, $body, $subject) {
+    $nu=getConfigs("./key.json");
+    $creds=createCredentials($nu);
 
     $client = SesClient::factory(array(
       'version'=> 'latest',
       'region' => 'us-east-1',
-      'credentials' => array(
-        'key' => 'AKIAIA34FTQJLBDY62UQ',
-        'secret' => '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'
-      )
+      'credentials' => $creds
     ));
 
     $request = array();
